@@ -1,0 +1,43 @@
+import streamlit as st
+from PIL import Image
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Load the trained Keras model
+model = load_model("prithivMLmods/Trash-Net")
+
+# Class names for prediction output
+class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+
+# Streamlit App UI
+st.set_page_config(page_title="AI Waste Classifier", page_icon="♻️")
+st.title("♻️ AI Waste Detector")
+st.write("Upload a trash image, and this AI model will classify it as one of the following:")
+st.write(", ".join([c.capitalize() for c in class_names]))
+
+# File uploader
+uploaded_file = st.file_uploader("📷 Upload an image...", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
+    image_resized = image.resize((300, 300))
+
+    st.image(image, caption="🖼️ Uploaded Image", use_column_width=True)
+
+    # Preprocess image
+    img_array = np.array(image_resized) / 255.0
+    img_array = img_array[np.newaxis, ...]
+
+    # Make prediction
+    prediction = model.predict(img_array)
+    predicted_index = np.argmax(prediction[0])
+    predicted_class = class_names[predicted_index]
+    confidence = np.max(prediction[0]) * 100
+
+    # Output
+    st.success(f"✅ Predicted as **{predicted_class.upper()}** with {confidence:.2f}% confidence")
+
+    # Display class probabilities
+    st.subheader("📊 Class Probabilities:")
+    for i, prob in enumerate(prediction[0]):
+        st.write(f"{class_names[i].capitalize()}: {round(prob * 100, 2)}%")
